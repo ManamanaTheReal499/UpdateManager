@@ -27,5 +27,7 @@ UpdateManager/UpdateManager-Core/bin/*
 UpdateManager/UpdateManager-Core/obj/*
 UpdateManager/UpdateManager-Test/bin/*
 UpdateManager/UpdateManager-Test/obj/*
+UpdateManager/PackageCreator/bin/*
+UpdateManager/PackageCreator/obj/*
 UpdateManager/.vs/*
 

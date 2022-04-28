@@ -4,13 +4,17 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UpdateManager_Core.Models;
+using System.IO.Compression;
+using System.Diagnostics;
 
 namespace UpdateManager_Core
 {
     public class UpdateManager
     {
+        public Meta? CurrentVersionMeta;
+        
         API api;
-
+        
         private string username;
         private string repository;
         private string releasesUrl
@@ -23,6 +27,7 @@ namespace UpdateManager_Core
             this.username = username;
             this.repository = repository;
             api = new API();
+            CurrentVersionMeta = Meta.Load();
         }
 
         public async Task<List<Root>?> GetAllReleasesAsync() =>
@@ -54,6 +59,69 @@ namespace UpdateManager_Core
             }
 
             return result;
+        }
+
+        public void DownloadFile(Root release, Action<string> callback)
+        {
+            new Thread(async () =>
+            {
+                var url = string.Empty;
+                foreach (var asset in release.assets!)
+                {
+                    if (asset.name == "Package.zip")
+                    {
+                        url = asset.browser_download_url;
+                        break;
+                    }
+                }
+
+                if (url == string.Empty) return;
+
+                using (HttpClient client = new HttpClient())
+                {
+                    Directory.CreateDirectory("temp");
+                    if (File.Exists(@"temp\Package.zip"))
+                        File.Delete(@"temp\Package.zip");
+
+                    await client.DownloadFileTaskAsync(url!.ToUri(), @"temp\Package.zip");
+                    ZipFile.ExtractToDirectory(@"temp\Package.zip", "temp", true);
+                    File.Delete(@"temp\Package.zip");
+                    callback?.Invoke(@"temp\Package\");
+                }
+            }).Start();
+        }
+
+        public void Install()
+        {
+            if (!Directory.Exists("temp")) return;
+
+            string installerContent = "@echo off\ntimeout 2\nXcopy .\\Package\\ ..\\ /E /H /C /I\nexit";
+            File.WriteAllText("temp\\installer.cmd",installerContent);
+            FileInfo f = new FileInfo("temp\\installer.cmd");
+
+            ExecuteBatFile(f.DirectoryName!, f.FullName);
+        }
+
+
+        private void ExecuteBatFile(string filepath,string filename)
+        {
+            Process proc = null;
+            try
+            {
+                string targetDir = string.Format(filepath); 
+                proc = new Process();
+                proc.StartInfo.WorkingDirectory = targetDir;
+                proc.StartInfo.FileName = filename;
+                proc.StartInfo.Arguments = string.Format("10"); 
+                proc.StartInfo.CreateNoWindow = false;
+                proc.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+                proc.Start();
+                Environment.Exit(0);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Exception Occurred :{0},{1}", ex.Message, ex.StackTrace.ToString());
+            }
         }
     }
 }
