@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using UpdateManager_Core.Models;
+using UpdateManager_Core;
 using System.IO.Compression;
 using System.Diagnostics;
 using System.Threading;
 using System.IO;
 using System.Net.Http;
+using System.Linq;
+using UpdateManager_Core.Models;
 
 namespace UpdateManager_Core
 {
@@ -36,7 +38,8 @@ namespace UpdateManager_Core
 
         public async Task<Root> GetFirtPackageAsync()
         {
-            var releases = await GetAllReleasesAsync();
+            var releases = (await GetAllReleasesAsync()).OrderBy((x) => x.published_at).ToList();
+            releases.Reverse();
             if(releases == null || releases.Count == 0) return null;
 
             Root result = null;
