@@ -81,11 +81,12 @@ namespace UpdateManager_Core
                 using (HttpClient client = new HttpClient())
                 {
                     Directory.CreateDirectory("temp");
+                    Directory.CreateDirectory("temp\\Package");
                     if (File.Exists(@"temp\Package.zip"))
                         File.Delete(@"temp\Package.zip");
 
                     await client.DownloadFileTaskAsync(url!.ToUri(), @"temp\Package.zip");
-                    ZipFile.ExtractToDirectory(@"temp\Package.zip", "temp", true);
+                    ZipFile.ExtractToDirectory(@"temp\Package.zip", "temp\\Package", true);
                     File.Delete(@"temp\Package.zip");
                     callback?.Invoke(@"temp\Package\");
                 }
@@ -95,8 +96,8 @@ namespace UpdateManager_Core
         public void Install(string injextCMD = "")
         {
             if (!Directory.Exists("temp")) return;
-
-            string installerContent = $"@echo off\ntimeout 2\nXcopy .\\Package\\ ..\\ /E /H /C /I\n{injextCMD}\nexit";
+            var tempPath = $"{AppDomain.CurrentDomain.BaseDirectory}temp";
+            string installerContent = $"@echo off\ntimeout 2\nXcopy {tempPath}\\Package\\ {tempPath}\\..\\ /Y /E /H /C /I\n{injextCMD}\nexit";
             File.WriteAllText("temp\\installer.cmd",installerContent);
             FileInfo f = new FileInfo("temp\\installer.cmd");
 
@@ -111,7 +112,6 @@ namespace UpdateManager_Core
             {
                 string targetDir = string.Format(filepath); 
                 proc = new Process();
-                proc.StartInfo.WorkingDirectory = targetDir;
                 proc.StartInfo.FileName = filename;
                 proc.StartInfo.Arguments = string.Format("10"); 
                 proc.StartInfo.CreateNoWindow = false;
