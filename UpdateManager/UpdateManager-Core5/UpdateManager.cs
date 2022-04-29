@@ -1,12 +1,18 @@
-﻿using UpdateManager_Core.Models;
+﻿using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using UpdateManager_Core.Models;
 using System.IO.Compression;
 using System.Diagnostics;
+using System.Threading;
+using System.IO;
+using System.Net.Http;
 
 namespace UpdateManager_Core
 {
     public class UpdateManager
     {
-        public Meta? CurrentVersionMeta;
+        public Meta CurrentVersionMeta;
         
         API api;
         
@@ -25,15 +31,15 @@ namespace UpdateManager_Core
             CurrentVersionMeta = Meta.Load();
         }
 
-        public async Task<List<Root>?> GetAllReleasesAsync() =>
-            await api.Request<List<Models.Root>?>(releasesUrl);
+        public async Task<List<Root>> GetAllReleasesAsync() =>
+            await api.Request<List<Models.Root>>(releasesUrl);
 
-        public async Task<Root?> GetFirtPackageAsync()
+        public async Task<Root> GetFirtPackageAsync()
         {
             var releases = await GetAllReleasesAsync();
             if(releases == null || releases.Count == 0) return null;
 
-            Root? result = null;
+            Root result = null;
 
             foreach(var release in releases)
             {
@@ -100,7 +106,7 @@ namespace UpdateManager_Core
 
         private void ExecuteBatFile(string filepath,string filename)
         {
-            Process? proc = null;
+            Process proc = null;
             try
             {
                 string targetDir = string.Format(filepath); 
@@ -115,7 +121,7 @@ namespace UpdateManager_Core
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Exception Occurred :{0},{1}", ex.Message, ex!.StackTrace!.ToString());
+                Console.WriteLine("Exception Occurred :{0},{1}", ex.Message, ex.StackTrace.ToString());
             }
         }
     }
